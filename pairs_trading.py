@@ -164,11 +164,12 @@ def stat_arb_success(stock_test, net):
         for k in range(z):
 
           delta = upper_bound_list[k]
-          print(f"stock {k}, delta: {delta}")
           gain += np.dot(delta, stock_test[k][10*i+1:10*i+10]-stock_test[k][10*i:10*i+9])
           cost += trans_cost * np.abs(np.concatenate([np.array([delta[0]]), delta[1:]-delta[:-1], np.array([delta[-1]])])).sum()
           cost += 0.5 * bid_ask_spread * np.abs(np.concatenate([np.array([delta[0]]), delta[1:]-delta[:-1], np.array([delta[-1]])])).sum()
           cost += (borrowing_cost/252.0*np.maximum(-1*delta, 0)*stock_test[k][10*i:10*i+9]).sum()
+          if gain-cost>0:
+              print(f"BUY {STOCK_TICKERS[k]} for {cost}")
 
         success.append(gain-cost)
         gain_list.append(gain)
@@ -265,6 +266,7 @@ grids = 4
 trans_cost = 0.01
 bid_ask_spread = 0.0002
 borrowing_cost = 0.1
+STOCK_TICKERS = ['BP', 'XOM']
 def main():
     asset_list = load_data()
     test_begin_day = 4500
