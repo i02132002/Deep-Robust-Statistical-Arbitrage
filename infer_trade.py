@@ -26,7 +26,7 @@ def main():
         start_time = time()
         record, total_gain, total_cost, stock_profits, stock_costs = stat_arb_success(stock_test, model)
         end_time = time()
-        random_value = random.choices([0, 1], weights=[0.5, 0.5])[0]
+        random_value = random.choices([0, 1], weights=[0.3, 0.7])[0]
         if (total_gain > total_cost) and random_value:
             buy_stock = np.argmax(stock_profits)
             sell_stock = np.argmin(stock_profits)
