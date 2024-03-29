@@ -25,7 +25,7 @@ def main():
         record, total_gain, total_cost = stat_arb_success(stock_test, model)
         end_time = time()
         if (total_gain > total_cost):
-            print(f"Time taken to execute trade: {end_time - start_time:.4f} seconds")
+            print(f"{end_time - start_time:.4f} seconds")
             print(f"BUY XOM for $X")
             print("Total Gain:", total_gain, "Total Cost:", total_cost)
             print(f"Trade executed for a profit of {total_gain - total_cost:.2f} Arbitrage is successful!")
