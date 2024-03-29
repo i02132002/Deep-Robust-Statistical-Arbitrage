@@ -58,8 +58,6 @@ def load_data():
     df2['Date'] = SP_dates
     df = df.dropna()
     df2 = df2.dropna()
-    print(len(df))
-    print(len(df2))
 
     df.reset_index(inplace = True)
     df.drop('index',axis=1, inplace = True)
@@ -76,8 +74,6 @@ def load_data():
     dates = dates[4500:]
     stoxx = stoxx[4500:]
     SP = SP[4500:]
-
-    print(len(stoxx), len(SP))
 
     asset_list = [stoxx, SP]
     return asset_list
