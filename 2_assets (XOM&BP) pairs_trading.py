@@ -298,8 +298,8 @@ print(rescaled_lower_bounds, rescaled_upper_bounds)
 
 results = {'Average':[], 'Std':[], 'Best':[], 'Worst':[], 'loss_perc':[], 'gains_perc':[], 'sharp_ratio':[], 'sortino_ratio':[]}
 
-num_epochs = 100
-N_measures = 5
+num_epochs = 10
+N_measures = 1
 grids = 4
 K = 1
 trials = 50
@@ -372,6 +372,7 @@ for trial in range(trials):
         net.delta0_s.clamp_(-M, M)
 
   print("Done Training")
+  torch.save(net.state_dict(), 'pairs_model.pth')
   net.eval()
   record = stat_arb_success(stock_test, net)
   print("Result After Training:")
