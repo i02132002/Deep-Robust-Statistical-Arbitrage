@@ -149,6 +149,8 @@ def stat_arb_success(stock_test, net):
     gain_list = []
     cost_list = []
     success = []
+    stock_profits = [[],[]]
+    stock_costs = [[],[]]
     for i in range(int(len(stock_test[0])/10)):
 
         query_data = np.zeros((1, 8*z))
@@ -168,8 +170,8 @@ def stat_arb_success(stock_test, net):
           cost += trans_cost * np.abs(np.concatenate([np.array([delta[0]]), delta[1:]-delta[:-1], np.array([delta[-1]])])).sum()
           cost += 0.5 * bid_ask_spread * np.abs(np.concatenate([np.array([delta[0]]), delta[1:]-delta[:-1], np.array([delta[-1]])])).sum()
           cost += (borrowing_cost/252.0*np.maximum(-1*delta, 0)*stock_test[k][10*i:10*i+9]).sum()
-          if gain-cost>0:
-              print(f"BUY {STOCK_TICKERS[k]} for {cost}")
+          stock_profits[k].append(gain-cost)
+          stock_costs[k].append(cost)
 
         success.append(gain-cost)
         gain_list.append(gain)
@@ -180,6 +182,8 @@ def stat_arb_success(stock_test, net):
     #print("Total Gain:", np.array(gain_list).mean(), "Total Cost:", np.array(cost_list).mean())
     total_gain = np.array(gain_list).mean()
     total_cost = np.array(cost_list).mean()
+    stock_profits = [np.array(stock_profits[0]).mean(), np.array(stock_profits[1]).mean()]
+    stock_costs = [np.array(stock_costs[0]).mean(), np.array(stock_costs[1]).mean()]
     success = np.array(success)
     res = dict()
     res['Gain'] = f
@@ -191,7 +195,7 @@ def stat_arb_success(stock_test, net):
     res['gains_perc'] = round(100*float(np.sum(success>0)/len(success)),2)
     res['sharp_ratio'] = round(np.sqrt(252.0/9)*success.mean()/success.std(),3)
     res['sortino_ratio'] = round(np.sqrt(252.0/9)*success.mean()/success[success<0].std(),3)
-    return res, total_gain, total_cost
+    return res, total_gain, total_cost, stock_profits, stock_costs
 
 def stat_arb_success_buy_and_hold(stock_test):
 
@@ -376,7 +380,7 @@ def main():
       print("Done Training")
       torch.save(net.state_dict(), 'pairs_model.pth')
       net.eval()
-      record, _, _ = stat_arb_success(stock_test, net)
+      record, _ = stat_arb_success(stock_test, net)
       print("Result After Training:")
       print(record)
 
