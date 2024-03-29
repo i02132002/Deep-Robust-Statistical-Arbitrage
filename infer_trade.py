@@ -30,7 +30,7 @@ def main():
         if (total_gain > total_cost) and random_value:
             buy_stock = np.argmax(stock_profits)
             sell_stock = np.argmin(stock_profits)
-            current_datetime = datetime.now().strftime("%y-%m-%d %H:%M:%S")
+            current_datetime = datetime.now().strftime("%H:%M:%S")
             print(f"[{current_datetime}] ({(end_time - start_time)*100:.4f} ms) BUY {STOCK_TICKERS[buy_stock]} at {stock_costs[buy_stock]:.3f} SELL {STOCK_TICKERS[sell_stock]} at {stock_costs[sell_stock]:.3f}, projected profit: {total_gain - total_cost:.3f}")
 
 if __name__ == '__main__':
