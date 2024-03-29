@@ -9,7 +9,7 @@ def main():
     print("Model loaded!")
     asset_list = load_data()
     start = 0
-    stop = 6000
+    stop = 3000
     for i in range(start, stop, 100):
         print("Pulling latest data from exchange...")
         test_begin_day = 4500 + i
@@ -19,6 +19,7 @@ def main():
         if (total_gain > total_cost):
             print(f"Trade executed for a profit of {total_gain - total_cost} Arbitrage is successful!")
         stat_arb_success_buy_and_hold_only_once(stock_test)
+        print('-'*30)
 
 if __name__ == '__main__':
     main()
