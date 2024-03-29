@@ -31,55 +31,60 @@ elif torch.backends.mps.is_available():
 else:
     device = "cpu"
 
-BP_data = yf.download("BP", start="1970-01-02", end="2021-01-01")
-XOM_data = yf.download("XOM", start="1970-01-02", end="2021-01-01")
-BP_data.to_csv("BP.csv")
-XOM_data.to_csv("XOM.csv")
 
-df = pd.read_csv("XOM.csv")
-df2 = pd.read_csv("BP.csv")
-df = df[['Date','Close']]
-df.columns = ['Date','Close1']
-df2 = df2[['Date','Close']]
-df2.columns = ['Date','Close2']
+def load_data():
+    BP_data = yf.download("BP", start="1970-01-02", end="2021-01-01")
+    XOM_data = yf.download("XOM", start="1970-01-02", end="2021-01-01")
+    BP_data.to_csv("BP.csv")
+    XOM_data.to_csv("XOM.csv")
 
-def format_date(date):
-    date = (date.split(' ')[0]).split('-')
-    if len(date[1])==1:
-        date[1] = '0'+date[1]
-    if len(date[2])==1:
-        date[2] = '0'+date[2]
-    return '-'.join(date)
-stoxx_dates = list(map(format_date, df.Date))
-df['Date'] = stoxx_dates
-SP_dates = list(map(format_date, df2.Date))
-df2['Date'] = SP_dates
-df = df.dropna()
-df2 = df2.dropna()
-print(len(df))
-print(len(df2))
+    df = pd.read_csv("XOM.csv")
+    df2 = pd.read_csv("BP.csv")
+    df = df[['Date','Close']]
+    df.columns = ['Date','Close1']
+    df2 = df2[['Date','Close']]
+    df2.columns = ['Date','Close2']
 
-df.reset_index(inplace = True)
-df.drop('index',axis=1, inplace = True)
-df2.reset_index(inplace = True)
-df2.drop('index',axis=1, inplace = True)
-df['Date']=df['Date'].apply(lambda x: datetime.strptime(x, '%Y-%m-%d'))
-df2['Date']=df2['Date'].apply(lambda x: datetime.strptime(x, '%Y-%m-%d'))
-data_inner = pd.merge(df,df2, on = 'Date', how='inner')
+    def format_date(date):
+        date = (date.split(' ')[0]).split('-')
+        if len(date[1])==1:
+            date[1] = '0'+date[1]
+        if len(date[2])==1:
+            date[2] = '0'+date[2]
+        return '-'.join(date)
+    stoxx_dates = list(map(format_date, df.Date))
+    df['Date'] = stoxx_dates
+    SP_dates = list(map(format_date, df2.Date))
+    df2['Date'] = SP_dates
+    df = df.dropna()
+    df2 = df2.dropna()
+    print(len(df))
+    print(len(df2))
 
-stoxx = data_inner.Close1.values
-SP = data_inner.Close2.values
-dates = data_inner.Date
+    df.reset_index(inplace = True)
+    df.drop('index',axis=1, inplace = True)
+    df2.reset_index(inplace = True)
+    df2.drop('index',axis=1, inplace = True)
+    df['Date']=df['Date'].apply(lambda x: datetime.strptime(x, '%Y-%m-%d'))
+    df2['Date']=df2['Date'].apply(lambda x: datetime.strptime(x, '%Y-%m-%d'))
+    data_inner = pd.merge(df,df2, on = 'Date', how='inner')
 
-dates = dates[4500:]
-stoxx = stoxx[4500:]
-SP = SP[4500:]
+    stoxx = data_inner.Close1.values
+    SP = data_inner.Close2.values
+    dates = data_inner.Date
 
-print(len(stoxx), len(SP))
+    dates = dates[4500:]
+    stoxx = stoxx[4500:]
+    SP = SP[4500:]
+
+    print(len(stoxx), len(SP))
+
+    asset_list = [stoxx, SP]
+    return asset_list
+
+asset_list = load_data()
 test_begin_day = 4500
 test_end_day = 6500
-
-asset_list = [stoxx, SP]
 z = 2 #number of assets
 
 plt.figure()
