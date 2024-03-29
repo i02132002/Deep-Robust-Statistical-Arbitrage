@@ -16,6 +16,7 @@ def main():
     start = 0
     stop = 3000
     sleep_time = random.uniform(0, 0.3)
+    random.seed(1)
     for i in range(start, stop, 100):
         test_begin_day = 4500 + i
         test_end_day = 5000 + i
