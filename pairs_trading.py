@@ -179,7 +179,9 @@ def stat_arb_success(stock_test, net):
 
         f+=success[-1]
 
-    print("Toal Gain:", np.array(gain_list).mean(), "Total Cost:", np.array(cost_list).mean())
+    print("Total Gain:", np.array(gain_list).mean(), "Total Cost:", np.array(cost_list).mean())
+    total_gain = np.array(gain_list).mean()
+    total_cost = np.array(cost_list).mean()
     success = np.array(success)
     res = dict()
     res['Gain'] = f
@@ -191,7 +193,7 @@ def stat_arb_success(stock_test, net):
     res['gains_perc'] = round(100*float(np.sum(success>0)/len(success)),2)
     res['sharp_ratio'] = round(np.sqrt(252.0/9)*success.mean()/success.std(),3)
     res['sortino_ratio'] = round(np.sqrt(252.0/9)*success.mean()/success[success<0].std(),3)
-    return res
+    return res, total_gain, total_cost
 
 def stat_arb_success_buy_and_hold(stock_test):
 
@@ -299,7 +301,7 @@ def main():
     rescaled_lower_bounds = S_lower*100 - z
     rescaled_upper_bounds = S_upper*100 + z
 
-    print(rescaled_lower_bounds, rescaled_upper_bounds)
+    #print(rescaled_lower_bounds, rescaled_upper_bounds)
 
     results = {'Average':[], 'Std':[], 'Best':[], 'Worst':[], 'loss_perc':[], 'gains_perc':[], 'sharp_ratio':[], 'sortino_ratio':[]}
 
@@ -375,7 +377,7 @@ def main():
       print("Done Training")
       torch.save(net.state_dict(), 'pairs_model.pth')
       net.eval()
-      record = stat_arb_success(stock_test, net)
+      record, _, _ = stat_arb_success(stock_test, net)
       print("Result After Training:")
       print(record)
 
