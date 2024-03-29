@@ -35,8 +35,6 @@ def main():
             print(f"SELL {STOCK_TICKERS[sell_stock]} for {stock_costs[sell_stock]}")
             print(f"Total Gain: {total_gain:.2f}, Total Cost: {total_cost:.2f}")
             print(f"Trade executed for a profit of {total_gain - total_cost:.2f} Arbitrage is successful!")
-        else:
-            print("No trade")
         print('-'*50)
 
 if __name__ == '__main__':
