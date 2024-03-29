@@ -175,7 +175,7 @@ def stat_arb_success(stock_test, net):
 
         f+=success[-1]
 
-    print("Total Gain:", np.array(gain_list).mean(), "Total Cost:", np.array(cost_list).mean())
+    #print("Total Gain:", np.array(gain_list).mean(), "Total Cost:", np.array(cost_list).mean())
     total_gain = np.array(gain_list).mean()
     total_cost = np.array(cost_list).mean()
     success = np.array(success)
