@@ -4,7 +4,7 @@ from time import time
 from time import sleep
 import random
 import numpy as np
-
+from datetime import datetime
 
 def main():
     print("Loading model...")
@@ -21,7 +21,9 @@ def main():
         test_end_day = 5000 + i
         stock_test = [asset[test_begin_day:test_end_day] for asset in asset_list]
         sleep(sleep_time)
-        print("***New data from exchange received***")
+        current_datetime = datetime.now().strftime("%y-%m-%d %H:%M:%S")
+        timestamp = datetime.strptime(current_datetime, "%y-%m-%d %H:%M:%S").timestamp()
+        print(f"[{timestamp}] ***New data from exchange received***")
         start_time = time()
         record, total_gain, total_cost, stock_profits, stock_costs = stat_arb_success(stock_test, model)
         end_time = time()
