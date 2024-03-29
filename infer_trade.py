@@ -26,15 +26,11 @@ def main():
         start_time = time()
         record, total_gain, total_cost, stock_profits, stock_costs = stat_arb_success(stock_test, model)
         end_time = time()
-        if (total_gain > total_cost):
-            print(f"{end_time - start_time:.4f} seconds")
+        random_value = random.choices([0, 1], weights=[0.8, 0.2])[0]
+        if (total_gain > total_cost) and random_value:
             buy_stock = np.argmax(stock_profits)
             sell_stock = np.argmin(stock_profits)
-            print(f"BUY {STOCK_TICKERS[buy_stock]} for {stock_costs[buy_stock]:.3f}")
-            print(f"SELL {STOCK_TICKERS[sell_stock]} for {stock_costs[sell_stock]:.3f}")
-            print(f"Total Gain: {total_gain:.2f}, Total Cost: {total_cost:.2f}")
-            print(f"Trade executed for a profit of {total_gain - total_cost:.2f} Arbitrage is successful!")
-        print('-'*50)
+            print(f"({(end_time - start_time)*1000:.4f} ms) BUY {STOCK_TICKERS[buy_stock]} at price {stock_costs[buy_stock]:.3f} SELL {STOCK_TICKERS[sell_stock]} at price {stock_costs[sell_stock]:.3f}, projected profit: {total_gain - total_cost:.2f}")
 
 if __name__ == '__main__':
     main()
