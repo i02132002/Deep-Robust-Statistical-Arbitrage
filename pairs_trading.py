@@ -164,6 +164,7 @@ def stat_arb_success(stock_test, net):
         for k in range(z):
 
           delta = upper_bound_list[k]
+          print(f"stock {k}, delta: {delta}")
           gain += np.dot(delta, stock_test[k][10*i+1:10*i+10]-stock_test[k][10*i:10*i+9])
           cost += trans_cost * np.abs(np.concatenate([np.array([delta[0]]), delta[1:]-delta[:-1], np.array([delta[-1]])])).sum()
           cost += 0.5 * bid_ask_spread * np.abs(np.concatenate([np.array([delta[0]]), delta[1:]-delta[:-1], np.array([delta[-1]])])).sum()

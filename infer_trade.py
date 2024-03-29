@@ -27,7 +27,7 @@ def main():
         if (total_gain > total_cost):
             print(f"{end_time - start_time:.4f} seconds")
             print(f"BUY XOM for $X")
-            print("Total Gain:", total_gain, "Total Cost:", total_cost)
+            print(f"Total Gain: {total_gain:.2f}, Total Cost: {total_cost:.2f}")
             print(f"Trade executed for a profit of {total_gain - total_cost:.2f} Arbitrage is successful!")
             stat_arb_success_buy_and_hold_only_once(stock_test)
         else:
