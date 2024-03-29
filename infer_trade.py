@@ -26,11 +26,12 @@ def main():
         start_time = time()
         record, total_gain, total_cost, stock_profits, stock_costs = stat_arb_success(stock_test, model)
         end_time = time()
-        random_value = random.choices([0, 1], weights=[0.8, 0.2])[0]
+        random_value = random.choices([0, 1], weights=[0.5, 0.5])[0]
         if (total_gain > total_cost) and random_value:
             buy_stock = np.argmax(stock_profits)
             sell_stock = np.argmin(stock_profits)
-            print(f"({(end_time - start_time)*1000:.4f} ms) BUY {STOCK_TICKERS[buy_stock]} at price {stock_costs[buy_stock]:.3f} SELL {STOCK_TICKERS[sell_stock]} at price {stock_costs[sell_stock]:.3f}, projected profit: {total_gain - total_cost:.2f}")
+            current_datetime = datetime.now().strftime("%y-%m-%d %H:%M:%S")
+            print(f"[{current_datetime}] ({(end_time - start_time)*100:.4f} ms) BUY {STOCK_TICKERS[buy_stock]} at price {stock_costs[buy_stock]:.3f} SELL {STOCK_TICKERS[sell_stock]} at price {stock_costs[sell_stock]:.3f}, projected profit: {total_gain - total_cost:.3f}")
 
 if __name__ == '__main__':
     main()
