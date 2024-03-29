@@ -82,15 +82,6 @@ def load_data():
     asset_list = [stoxx, SP]
     return asset_list
 
-asset_list = load_data()
-test_begin_day = 4500
-test_end_day = 6500
-z = 2 #number of assets
-
-plt.figure()
-for i in range(z):
-  plt.plot(asset_list[i])
-
 def get_slice_array1(i):
   temp = np.tile(np.arange(i+1), z)
   return temp+np.repeat(np.arange(z),i+1)*8
@@ -137,7 +128,7 @@ def get_indicator_matrix(partition, S_n):
       indicator_matrix[i][pos]=1
     return torch.FloatTensor(indicator_matrix)
 
-def get_frac_vector(P_tau_tilde, indicator_matrix):
+def get_frac_vector(net, P_tau_tilde, indicator_matrix):
     #get input data for neural network
     net_input = P_tau_tilde[:,get_slice_array2()]
     #perform forward propagation to obtain deltas for each asset
@@ -266,143 +257,155 @@ class Net_independent(nn.Module):
         output1 = [F.relu(self.first_layers[i](self.bn_layers[i](x[:,get_slice_array1(i)]))) for i in range(8)]
         output2 = [F.relu(self.second_layers[i](output1[i])) for i in range(8)]
         output3 = [F.relu(self.third_layers[i](output2[i])) for i in range(8)]
-        deltas = [M*torch.tanh(self.fourth_layers[i](output3[i])) for i in range(8)]
+        deltas = [self.M*torch.tanh(self.fourth_layers[i](output3[i])) for i in range(8)]
         delta_list = [torch.cat([delta[:,i:i+1] for delta in deltas], axis=1) for i in range(z)]
         return [torch.cat((self.delta0_s[i]*torch.ones((x.shape[0],1)).cuda(),delta_list[i]), axis=1) for i in range(z)], self.c
 
-stock_train = [asset[:test_begin_day] for asset in asset_list]
-stock_test = [asset[test_begin_day:test_end_day] for asset in asset_list]
-
-N = len(stock_train[0])
-n=10-1
-
-P_hat = np.zeros((z*(n+1),N-n))
-
-for j in range(z):
-  for i in range(n+1):
-    P_hat[i+j*(n+1),:] = stock_train[j][i:N-n+i]
-
-P_hat = torch.FloatTensor(P_hat.T)
-
-S_lower = torch.FloatTensor([100]*z)
-S_upper = torch.FloatTensor([-100]*z)
-for i in range(z):
-  for j in range(1,n+1):
-    S_lower[i] = torch.min(S_lower[i], torch.min(P_hat[:,10*i+j]/P_hat[:,10*i]))
-    S_upper[i] = torch.max(S_upper[i], torch.max(P_hat[:,10*i+j]/P_hat[:,10*i]))
-
-rescaled_lower_bounds = S_lower*100 - z
-rescaled_upper_bounds = S_upper*100 + z
-
-print(rescaled_lower_bounds, rescaled_upper_bounds)
-
-results = {'Average':[], 'Std':[], 'Best':[], 'Worst':[], 'loss_perc':[], 'gains_perc':[], 'sharp_ratio':[], 'sortino_ratio':[]}
-
-num_epochs = 10
-N_measures = 1
+z = 2 #number of assets
 grids = 4
-K = 1
-trials = 1
-epsilon = z
-M = 10
 trans_cost = 0.01
 bid_ask_spread = 0.0002
 borrowing_cost = 0.1
-pnl = []
+def main():
+    asset_list = load_data()
+    test_begin_day = 4500
+    test_end_day = 6500
 
-#print result of buy and hold strategy
-print(stat_arb_success_buy_and_hold(stock_test))
 
-stat_arb_success_buy_and_hold_only_once(stock_test)
+    plt.figure()
+    for i in range(z):
+        plt.plot(asset_list[i])
+    stock_train = [asset[:test_begin_day] for asset in asset_list]
+    stock_test = [asset[test_begin_day:test_end_day] for asset in asset_list]
 
-for trial in range(trials):
-  np.random.seed(trial)
-  torch.manual_seed(trial)
-  print("Trial:", trial)
-  net = Net_independent(M,z).cuda()
-  net.train()
-  optimizer = optim.Adam(net.parameters(), lr=1e-3)
-  loss_rec = []
-  c_rec = []
-  for epoch in range(num_epochs):
+    N = len(stock_train[0])
+    n=10-1
 
-      if epoch%10==0:
-        print("Test at Epoch", epoch)
-        net.eval()
-        record = stat_arb_success(stock_test, net)
-        net.train()
-        print(record)
+    P_hat = np.zeros((z*(n+1),N-n))
 
-      optimizer.zero_grad()
-      total_loss = 0
-      partition = get_random_partition(rescaled_lower_bounds, rescaled_upper_bounds, 12, False)
+    for j in range(z):
+      for i in range(n+1):
+        P_hat[i+j*(n+1),:] = stock_train[j][i:N-n+i]
 
-      for m in range(N_measures):
+    P_hat = torch.FloatTensor(P_hat.T)
 
-          batch_index = np.arange(P_hat.shape[0])
+    S_lower = torch.FloatTensor([100]*z)
+    S_upper = torch.FloatTensor([-100]*z)
+    for i in range(z):
+      for j in range(1,n+1):
+        S_lower[i] = torch.min(S_lower[i], torch.min(P_hat[:,10*i+j]/P_hat[:,10*i]))
+        S_upper[i] = torch.max(S_upper[i], torch.max(P_hat[:,10*i+j]/P_hat[:,10*i]))
 
-          P_tau_tilde = P_hat.clone()
+    rescaled_lower_bounds = S_lower*100 - z
+    rescaled_upper_bounds = S_upper*100 + z
 
-          for j in range(z):
-            P_tau_tilde[:,10*j:10*(j+1)] /= (P_tau_tilde[:,10*j]/100).reshape(-1,1)
+    print(rescaled_lower_bounds, rescaled_upper_bounds)
 
-          tau_m = torch.FloatTensor(np.random.normal(0,1,(P_hat.shape[0], P_hat.shape[1]-z)))
-          U_epsilon = torch.FloatTensor(epsilon * np.random.rand(1))
-          tau_tilde = U_epsilon * tau_m/torch.norm(tau_m, p=2, dim=1, keepdim=True)
+    results = {'Average':[], 'Std':[], 'Best':[], 'Worst':[], 'loss_perc':[], 'gains_perc':[], 'sharp_ratio':[], 'sortino_ratio':[]}
 
-          P_tau_tilde[:,get_slice_array3()] += tau_tilde
+    num_epochs = 10
+    N_measures = 1
+    K = 1
+    trials = 1
+    epsilon = z
+    M = 10
+    pnl = []
 
-          S_n = P_tau_tilde[:,np.arange(1,z+1)*10-1].numpy()
-          S_n = S_n[batch_index]
+    #print result of buy and hold strategy
+    print(stat_arb_success_buy_and_hold(stock_test))
 
-          indicator_matrix = get_indicator_matrix(partition, S_n).cuda()
-          P_tau_tilde = P_tau_tilde.cuda()
-          P_tau_tilde = P_tau_tilde[batch_index]
+    stat_arb_success_buy_and_hold_only_once(stock_test)
 
-          frac_vector = get_frac_vector(P_tau_tilde, indicator_matrix)
-          total_loss += beta(torch.matmul(indicator_matrix, frac_vector)).sum()/len(S_n)
+    for trial in range(trials):
+      np.random.seed(trial)
+      torch.manual_seed(trial)
+      print("Trial:", trial)
+      net = Net_independent(M,z).cuda()
+      net.train()
+      optimizer = optim.Adam(net.parameters(), lr=1e-3)
+      loss_rec = []
+      c_rec = []
+      for epoch in range(num_epochs):
 
-      total_loss = net.c + K * total_loss
-      loss_rec.append(total_loss.item())
-      c_rec.append(net.c.clone().detach().cpu().numpy()[0])
-      total_loss.backward()
-      optimizer.step()
-      with torch.no_grad():
-        net.c.clamp_(-M, M)
-        net.delta0_s.clamp_(-M, M)
+          if epoch%10==0:
+            print("Test at Epoch", epoch)
+            net.eval()
+            record = stat_arb_success(stock_test, net)
+            net.train()
+            print(record)
 
-  print("Done Training")
-  torch.save(net.state_dict(), 'pairs_model.pth')
-  net.eval()
-  record = stat_arb_success(stock_test, net)
-  print("Result After Training:")
-  print(record)
+          optimizer.zero_grad()
+          total_loss = 0
+          partition = get_random_partition(rescaled_lower_bounds, rescaled_upper_bounds, 12, False)
 
-  pnl.append(record)
+          for m in range(N_measures):
 
-  plt.figure()
-  plt.plot(loss_rec)
-  plt.title('Loss Function')
-  plt.savefig("loss.eps", format = 'eps')
+              batch_index = np.arange(P_hat.shape[0])
 
-  plt.figure()
-  plt.plot(c_rec)
-  plt.title('c variable')
-  plt.savefig("c.png")
+              P_tau_tilde = P_hat.clone()
 
-  print(loss_rec)
+              for j in range(z):
+                P_tau_tilde[:,10*j:10*(j+1)] /= (P_tau_tilde[:,10*j]/100).reshape(-1,1)
 
-with open('pnl.json', 'w') as f:
-    json.dump(pnl, f)
+              tau_m = torch.FloatTensor(np.random.normal(0,1,(P_hat.shape[0], P_hat.shape[1]-z)))
+              U_epsilon = torch.FloatTensor(epsilon * np.random.rand(1))
+              tau_tilde = U_epsilon * tau_m/torch.norm(tau_m, p=2, dim=1, keepdim=True)
 
-plt.hist([p['Average'] for p in pnl])
+              P_tau_tilde[:,get_slice_array3()] += tau_tilde
 
-print("Overall Profit:", np.round(np.mean([result['Gain'] for result in pnl]),2))
-print("Average Profit:", np.round(np.mean([result['Average'] for result in pnl]),2))
-print("Profit Std:", np.round(np.mean([result['Std'] for result in pnl]),2))
-print("gains_perc:", np.round(np.mean([result['gains_perc'] for result in pnl]),2))
-print("Best:", np.round(np.mean([result['Best'] for result in pnl]),2))
-print("Worst:", np.round(np.mean([result['Worst'] for result in pnl]),2))
-print("sharp_ratio:", np.round(np.mean([result['sharp_ratio'] for result in pnl]),4))
-print("sortino_ratio:", np.round(np.mean([result['sortino_ratio'] for result in pnl]),4))
+              S_n = P_tau_tilde[:,np.arange(1,z+1)*10-1].numpy()
+              S_n = S_n[batch_index]
 
+              indicator_matrix = get_indicator_matrix(partition, S_n).cuda()
+              P_tau_tilde = P_tau_tilde.cuda()
+              P_tau_tilde = P_tau_tilde[batch_index]
+
+              frac_vector = get_frac_vector(net, P_tau_tilde, indicator_matrix)
+              total_loss += beta(torch.matmul(indicator_matrix, frac_vector)).sum()/len(S_n)
+
+          total_loss = net.c + K * total_loss
+          loss_rec.append(total_loss.item())
+          c_rec.append(net.c.clone().detach().cpu().numpy()[0])
+          total_loss.backward()
+          optimizer.step()
+          with torch.no_grad():
+            net.c.clamp_(-M, M)
+            net.delta0_s.clamp_(-M, M)
+
+      print("Done Training")
+      torch.save(net.state_dict(), 'pairs_model.pth')
+      net.eval()
+      record = stat_arb_success(stock_test, net)
+      print("Result After Training:")
+      print(record)
+
+      pnl.append(record)
+
+      plt.figure()
+      plt.plot(loss_rec)
+      plt.title('Loss Function')
+      plt.savefig("loss.eps", format = 'eps')
+
+      plt.figure()
+      plt.plot(c_rec)
+      plt.title('c variable')
+      plt.savefig("c.png")
+
+      print(loss_rec)
+
+    with open('pnl.json', 'w') as f:
+        json.dump(pnl, f)
+
+    plt.hist([p['Average'] for p in pnl])
+
+    print("Overall Profit:", np.round(np.mean([result['Gain'] for result in pnl]),2))
+    print("Average Profit:", np.round(np.mean([result['Average'] for result in pnl]),2))
+    print("Profit Std:", np.round(np.mean([result['Std'] for result in pnl]),2))
+    print("gains_perc:", np.round(np.mean([result['gains_perc'] for result in pnl]),2))
+    print("Best:", np.round(np.mean([result['Best'] for result in pnl]),2))
+    print("Worst:", np.round(np.mean([result['Worst'] for result in pnl]),2))
+    print("sharp_ratio:", np.round(np.mean([result['sharp_ratio'] for result in pnl]),4))
+    print("sortino_ratio:", np.round(np.mean([result['sortino_ratio'] for result in pnl]),4))
+
+if __name__ == '__main__':
+    main()
