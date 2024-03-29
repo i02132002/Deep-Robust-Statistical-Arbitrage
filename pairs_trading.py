@@ -162,8 +162,6 @@ def stat_arb_success(stock_test, net):
     gain_list = []
     cost_list = []
     success = []
-    #positions = [[] for _ in range(z)]
-
     for i in range(int(len(stock_test[0])/10)):
 
         query_data = np.zeros((1, 8*z))
@@ -179,7 +177,6 @@ def stat_arb_success(stock_test, net):
         for k in range(z):
 
           delta = upper_bound_list[k]
-          #positions[k].append(delta)
           gain += np.dot(delta, stock_test[k][10*i+1:10*i+10]-stock_test[k][10*i:10*i+9])
           cost += trans_cost * np.abs(np.concatenate([np.array([delta[0]]), delta[1:]-delta[:-1], np.array([delta[-1]])])).sum()
           cost += 0.5 * bid_ask_spread * np.abs(np.concatenate([np.array([delta[0]]), delta[1:]-delta[:-1], np.array([delta[-1]])])).sum()
@@ -203,8 +200,6 @@ def stat_arb_success(stock_test, net):
     res['gains_perc'] = round(100*float(np.sum(success>0)/len(success)),2)
     res['sharp_ratio'] = round(np.sqrt(252.0/9)*success.mean()/success.std(),3)
     res['sortino_ratio'] = round(np.sqrt(252.0/9)*success.mean()/success[success<0].std(),3)
-    #res2 = positions
-    #return res, res2
     return res
 
 def stat_arb_success_buy_and_hold(stock_test):
