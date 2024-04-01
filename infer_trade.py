@@ -17,6 +17,8 @@ def main():
     stop = 3000
     sleep_time = random.uniform(0, 0.3)
     random.seed(1)
+    total_time = 0
+    total_count = 0
     for i in range(start, stop, 100):
         test_begin_day = 4500 + i
         test_end_day = 5000 + i
@@ -27,12 +29,14 @@ def main():
         start_time = time()
         record, total_gain, total_cost, stock_profits, stock_costs = stat_arb_success(stock_test, model)
         end_time = time()
-        random_value = random.choices([0, 1], weights=[0.7, 0.3])[0]
-        if (total_gain > total_cost) and random_value:
+        #random_value = random.choices([0, 1], weights=[0.7, 0.3])[0]
+        if (total_gain > total_cost): #and random_value:
             buy_stock = np.argmax(stock_profits)
             sell_stock = np.argmin(stock_profits)
             current_datetime = datetime.now().strftime("%H:%M:%S")
+            total_time += int((end_time - start_time)*1000)
+            total_count += 1
             print(f"[{current_datetime}] ({int((end_time - start_time)*1000)} ms) BUY {STOCK_TICKERS[buy_stock]} at {stock_costs[buy_stock]:.3f} SELL {STOCK_TICKERS[sell_stock]} at {stock_costs[sell_stock]:.3f}, projected profit: {total_gain - total_cost:.3f}")
-
+    print(f"All done! Average latency: {total_time/total_count:.2f}ms")
 if __name__ == '__main__':
     main()
